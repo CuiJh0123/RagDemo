@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>最小 RAG Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f7fa;
+            margin: 0;
+            padding: 40px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+
+        h1 {
+            margin-top: 0;
+            font-size: 24px;
+        }
+
+        .desc {
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 120px;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #dcdfe6;
+            border-radius: 8px;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+
+        button {
+            margin-top: 16px;
+            background: #409eff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 18px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #337ecc;
+        }
+
+        button:disabled {
+            background: #a0cfff;
+            cursor: not-allowed;
+        }
+
+        .section-title {
+            margin-top: 24px;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .answer-box {
+            background: #f8f9fb;
+            border: 1px solid #ebeef5;
+            border-radius: 8px;
+            padding: 16px;
+            min-height: 100px;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+
+        .loading {
+            color: #999;
+        }
+
+        .error {
+            color: #d93025;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>项目知识问答助手</h1>
+    <div class="desc">
+        输入你的问题，后端会调用大模型进行回答。后续可扩展为 RAG / Agent 版本。
+    </div>
+
+    <div class="section-title">请输入问题</div>
+    <textarea id="question" placeholder="例如：拼团规则是什么？"></textarea>
+
+    <button id="sendBtn" onclick="sendQuestion()">发送</button>
+
+    <div class="section-title">回答结果</div>
+    <div id="answer" class="answer-box">这里会显示模型回答...</div>
+</div>
+
+<script>
+    async function sendQuestion() {
+        const questionEl = document.getElementById("question");
+        const answerEl = document.getElementById("answer");
+        const sendBtn = document.getElementById("sendBtn");
+
+        const question = questionEl.value.trim();
+        if (!question) {
+            answerEl.innerHTML = '<span class="error">请输入问题后再发送。</span>';
+            return;
+        }
+
+        sendBtn.disabled = true;
+        answerEl.innerHTML = '<span class="loading">正在请求模型，请稍候...</span>';
+
+        try {
+            const response = await fetch("/chat", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    question: question
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error("请求失败，状态码：" + response.status);
+            }
+
+            const data = await response.json();
+            answerEl.textContent = data.answer ?? "没有返回回答内容";
+        } catch (error) {
+            answerEl.innerHTML = '<span class="error">调用失败：' + error.message + '</span>';
+        } finally {
+            sendBtn.disabled = false;
+        }
+    }
+</script>
+</body>
+</html>
