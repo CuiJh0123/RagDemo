@@ -85,14 +85,30 @@
         .error {
             color: #d93025;
         }
+
+        select {
+            width: 100%;
+            padding: 10px;
+            font-size: 15px;
+            border: 1px solid #dcdfe6;
+            border-radius: 8px;
+            box-sizing: border-box;
+            background: white;
+        }
     </style>
 </head>
 <body>
 <div class="container">
     <h1>项目知识问答助手</h1>
     <div class="desc">
-        输入你的问题，后端会调用大模型进行回答。后续可扩展为 RAG / Agent 版本。
+        输入你的问题，后端会调用大模型进行回答，可切换 RAG / 非 RAG 模式。
     </div>
+
+    <div class="section-title">请选择问答模式</div>
+    <select id="mode">
+        <option value="rag">RAG问答</option>
+        <option value="without">普通问答（无RAG）</option>
+    </select>
 
     <div class="section-title">请输入问题</div>
     <textarea id="question" placeholder="例如：拼团规则是什么？"></textarea>
@@ -108,8 +124,11 @@
         const questionEl = document.getElementById("question");
         const answerEl = document.getElementById("answer");
         const sendBtn = document.getElementById("sendBtn");
+        const modeEl = document.getElementById("mode");
 
         const question = questionEl.value.trim();
+        const mode = modeEl.value;
+
         if (!question) {
             answerEl.innerHTML = '<span class="error">请输入问题后再发送。</span>';
             return;
@@ -119,7 +138,12 @@
         answerEl.innerHTML = '<span class="loading">正在请求模型，请稍候...</span>';
 
         try {
-            const response = await fetch("/chat", {
+            let url = "/chat";
+            if (mode === "without") {
+                url = "/without";
+            }
+
+            const response = await fetch(url, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"
@@ -135,6 +159,9 @@
 
             const data = await response.json();
             answerEl.textContent = data.answer ?? "没有返回回答内容";
+
+            // 请求成功后清空输入框
+            questionEl.value = "";
         } catch (error) {
             answerEl.innerHTML = '<span class="error">调用失败：' + error.message + '</span>';
         } finally {
